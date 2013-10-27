@@ -21,8 +21,10 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.MeasureSpec;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -54,8 +56,13 @@ public class FadingActionBarHelper {
     private boolean mFirstGlobalLayoutPerformed;
     private View mMarginView;
     private View mListViewBackgroundView;
+    private boolean touchEnabled;
 
 
+    public FadingActionBarHelper headerTouchEnabled(boolean enabled){
+    	touchEnabled = enabled;
+    	return this;
+    }
     public FadingActionBarHelper actionBarBackground(int drawableResId) {
         mActionBarBackgroundResId = drawableResId;
         return this;
@@ -175,18 +182,39 @@ public class FadingActionBarHelper {
     };
 
     private View createScrollView() {
+    	
         mScrollView = (ViewGroup) mInflater.inflate(R.layout.fab__scrollview_container, null);
 
         NotifyingScrollView scrollView = (NotifyingScrollView) mScrollView.findViewById(R.id.fab__scroll_view);
-        scrollView.setOnScrollChangedListener(mOnScrollChangedListener);
 
+        scrollView.setOnScrollChangedListener(mOnScrollChangedListener);
+        
+       
         mContentContainer = (ViewGroup) mScrollView.findViewById(R.id.fab__container);
         mContentContainer.addView(mContentView);
         mHeaderContainer = (FrameLayout) mScrollView.findViewById(R.id.fab__header_container);
         initializeGradient(mHeaderContainer);
         mHeaderContainer.addView(mHeaderView, 0);
         mMarginView = mContentContainer.findViewById(R.id.fab__content_top_margin);
+        
+        //check whether header touch events have been requested
+        if(touchEnabled){
+        	
+        	//Catch event and pass back to the header container
+            mMarginView.setOnTouchListener(new View.OnTouchListener() {
 
+    	            @Override
+    	            public boolean onTouch(View v, MotionEvent event) {
+    	            	
+    	            	  mContentContainer.requestDisallowInterceptTouchEvent(true);
+                          mHeaderContainer.dispatchTouchEvent(event);
+                            
+                          return true;
+    	            }
+            });
+        	
+        }
+        
         return mScrollView;
     }
 
